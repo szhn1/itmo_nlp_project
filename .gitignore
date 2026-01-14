@@ -1,0 +1,16 @@
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated indexes
+notebooks/indexes/
+
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/

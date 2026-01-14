@@ -1,0 +1,7 @@
+products_per_request: 1
+model_name: llm
+input_data: /work/input/data_for_labeling.csv
+output_filename: labeled_data
+
+logging: INFO
+

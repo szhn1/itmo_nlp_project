@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: narrative-collector
+  namespace: cad
+  labels:
+    app: narrative-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: narrative-collector
+  template:
+    metadata:
+      labels:
+        app: narrative-collector
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-worker3-2
+      imagePullSecrets:
+        - name: gitlab-registry
+      containers:
+        - name: narrative-collector
+          image: cc-gitlab.iep.ru:5050/research/narrative-collector:latest
+          imagePullPolicy: Always
+          terminationMessagePath: "/tmp/my-log"
+          env:
+          - name: POSTGRES_HOST
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: postgres_host
+
+          - name: POSTGRES_PORT 
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: postgres_port
+
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: postgres_db
+
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: postgres_user
+
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: postgres_password
+
+          - name: TIME_START
+            value: "19:00"
+
+          - name: API_ID
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: api_id
+
+          - name: API_HASH
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: api_hash
+
+          - name: PHONE
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: phone
+
+          - name: TG_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: tg_token
+
+          - name: CHAT_IDS
+            valueFrom:
+              secretKeyRef:
+                name: narrative-secrets
+                key: chat_ids
+

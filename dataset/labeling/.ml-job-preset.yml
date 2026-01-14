@@ -1,0 +1,69 @@
+job:
+  time_limit: 120h00m
+  flavor: {flavor}
+  region: {region}
+  image: docker-hosted.artifactory.tcsbank.ru/ecom-ml/dolyame-search-base:latest
+  generate_name: search_llm_labeling_{key}
+  work_dir: /work
+
+  input:
+    - type: files
+      src: ./
+      dst: /work
+    - type: s3msk
+      bucket: ecom-ml-dolyame-search
+      src: {PREFIX}
+      file: "data_for_labeling_{key}_dedup.csv"
+      dst: /work/input/data_for_labeling.csv
+      access_key: {access_key}
+      secret_key: {secret_key}
+
+  output:
+    - type: s3msk
+      bucket: ecom-ml-dolyame-search
+      src: /work/output
+      dst: {PREFIX}/output_{key}
+      access_key: {access_key}
+      secret_key: {secret_key}
+
+  args:
+    - sh
+    - -c
+    - |
+      pip install -q openai[aiohttp] pandas polars pyarrow requests tqdm aiohttp asyncio jinja2 pydantic pydantic-settings hydra-core && \
+      python llm_labeling.py input_data=/work/input/data_for_labeling.csv output_filename=chunk_{key} products_per_request=1
+
+  env:
+    version: labeling_tmp
+
+services:
+  llm:
+    flavor: a100-{gpu_num}x
+    region: {region}
+    image: docker-hosted.artifactory.tcsbank.ru/biglm/vllm/vllm-openai:v0.8.5.post1
+    entrypoint: "/bin/bash"
+    env:
+      VLLM_LOGGING_LEVEL: ERROR
+      VLLM_CONFIGURE_LOGGING: 0
+    input:
+      - type: model_registry
+        src: openai/gpt-oss-120b
+        version: a040b350839741c2fda885e61d0c248e18b9c1d7
+        dst: /hf_models/llm
+    args:
+      - -c
+      - >
+        pip install --upgrade transformers vllm &&
+        vllm serve
+        /hf_models/llm
+        --served-model-name llm
+        --host 0.0.0.0
+        --port 8000
+        --trust-remote-code
+        --max-model-len 8192
+        --gpu-memory-utilization 0.95
+        --max-num-seqs 728
+        --enforce-eager
+        --enable_prefix_caching
+        --async-scheduling
+        --tensor-parallel-size {gpu_num}
